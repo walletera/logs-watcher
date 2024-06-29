@@ -1,4 +1,4 @@
-package logs
+package std
 
 import (
     "fmt"
@@ -13,9 +13,8 @@ import (
     "github.com/stretchr/testify/require"
 )
 
-func TestWatcher_WaitFor_LogIsAlreadyThere(t *testing.T) {
-    logsWatcher := NewWatcher()
-    err := logsWatcher.Start()
+func TestStdWatcher_WaitFor_LogIsAlreadyThere(t *testing.T) {
+    logsWatcher, err := NewStdWatcher()
     require.NoError(t, err)
 
     time.Sleep(1 * time.Millisecond)
@@ -30,9 +29,8 @@ func TestWatcher_WaitFor_LogIsAlreadyThere(t *testing.T) {
     require.NoError(t, err)
 }
 
-func TestWatcher_WaitFor_LogAppearsAfterTheCallToWaitFor(t *testing.T) {
-    logsWatcher := NewWatcher()
-    err := logsWatcher.Start()
+func TestStdWatcher_WaitFor_LogAppearsAfterTheCallToWaitFor(t *testing.T) {
+    logsWatcher, err := NewStdWatcher()
     require.NoError(t, err)
 
     fmt.Println("Hola")
@@ -50,9 +48,8 @@ func TestWatcher_WaitFor_LogAppearsAfterTheCallToWaitFor(t *testing.T) {
     require.NoError(t, err)
 }
 
-func TestWatcher_WaitFor_LogAppearsTooLate(t *testing.T) {
-    logsWatcher := NewWatcher()
-    err := logsWatcher.Start()
+func TestStdWatcher_WaitFor_LogAppearsTooLate(t *testing.T) {
+    logsWatcher, err := NewStdWatcher()
     require.NoError(t, err)
 
     fmt.Println("Hola")
@@ -71,9 +68,8 @@ func TestWatcher_WaitFor_LogAppearsTooLate(t *testing.T) {
     require.NoError(t, err)
 }
 
-func TestWatcher_WaitFor_MultilineLog(t *testing.T) {
-    logsWatcher := NewWatcher()
-    err := logsWatcher.Start()
+func TestStdWatcher_WaitFor_MultilineLog(t *testing.T) {
+    logsWatcher, err := NewStdWatcher()
     require.NoError(t, err)
 
     go func() {
@@ -89,16 +85,14 @@ func TestWatcher_WaitFor_MultilineLog(t *testing.T) {
     require.NoError(t, err)
 }
 
-func TestWatcher_WaitFor_Concurrency(t *testing.T) {
-    logsWatcher := NewWatcher()
-    err := logsWatcher.Start()
+func TestStdWatcher_WaitFor_Concurrency(t *testing.T) {
+    logsWatcher, err := NewStdWatcher()
     require.NoError(t, err)
 
     goroutinesCount := 100
 
     for i := 0; i < goroutinesCount; i++ {
         go func() {
-            time.Sleep(time.Duration(rand.Intn(goroutinesCount)) * time.Millisecond)
             sysLogEntry := testdata.Syslog[rand.Intn(len(testdata.Syslog))]
             fmt.Println(sysLogEntry)
         }()
@@ -109,7 +103,6 @@ func TestWatcher_WaitFor_Concurrency(t *testing.T) {
 
     for i := 0; i < goroutinesCount; i++ {
         go func() {
-            time.Sleep(time.Duration(rand.Intn(goroutinesCount)) * time.Millisecond)
             keyword := testdata.SyslogSubstrs[rand.Intn(len(testdata.SyslogSubstrs))]
             found := logsWatcher.WaitFor(keyword, time.Duration(goroutinesCount+1)*time.Millisecond)
             assert.True(t, found, "keyword not found: ", keyword)
