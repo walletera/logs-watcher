@@ -6,6 +6,7 @@ import (
     "io"
     "os"
 
+    "github.com/walletera/logs-watcher"
     "github.com/walletera/logs-watcher/newline"
 )
 
@@ -19,6 +20,9 @@ type Watcher struct {
     pipeWrite  *os.File
     stopping   bool
 }
+
+// _ is a compile-time check ensuring that Watcher implements the logs.IWatcher interface.
+var _ logs.IWatcher = (*Watcher)(nil)
 
 func NewWatcher() (*Watcher, error) {
     stdoutWatcher := &Watcher{}
