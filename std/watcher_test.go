@@ -14,7 +14,7 @@ import (
 )
 
 func TestStdWatcher_WaitFor_LogIsAlreadyThere(t *testing.T) {
-    logsWatcher, err := NewStdWatcher()
+    logsWatcher, err := NewWatcher()
     require.NoError(t, err)
 
     time.Sleep(1 * time.Millisecond)
@@ -30,7 +30,7 @@ func TestStdWatcher_WaitFor_LogIsAlreadyThere(t *testing.T) {
 }
 
 func TestStdWatcher_WaitFor_LogAppearsAfterTheCallToWaitFor(t *testing.T) {
-    logsWatcher, err := NewStdWatcher()
+    logsWatcher, err := NewWatcher()
     require.NoError(t, err)
 
     fmt.Println("Hola")
@@ -49,7 +49,7 @@ func TestStdWatcher_WaitFor_LogAppearsAfterTheCallToWaitFor(t *testing.T) {
 }
 
 func TestStdWatcher_WaitFor_LogAppearsTooLate(t *testing.T) {
-    logsWatcher, err := NewStdWatcher()
+    logsWatcher, err := NewWatcher()
     require.NoError(t, err)
 
     fmt.Println("Hola")
@@ -69,7 +69,7 @@ func TestStdWatcher_WaitFor_LogAppearsTooLate(t *testing.T) {
 }
 
 func TestStdWatcher_WaitFor_MultilineLog(t *testing.T) {
-    logsWatcher, err := NewStdWatcher()
+    logsWatcher, err := NewWatcher()
     require.NoError(t, err)
 
     go func() {
@@ -86,27 +86,44 @@ func TestStdWatcher_WaitFor_MultilineLog(t *testing.T) {
 }
 
 func TestStdWatcher_WaitFor_Concurrency(t *testing.T) {
-    logsWatcher, err := NewStdWatcher()
+    if len(testdata.Syslog) != len(testdata.SyslogSubstrs) {
+        t.Error("Syslog and SyslogSubstrs are not the same length")
+    }
+
+    logsWatcher, err := NewWatcher()
     require.NoError(t, err)
 
     goroutinesCount := 100
+    wg := &sync.WaitGroup{}
+    wg.Add(goroutinesCount)
+    syslogIndexCh := make(chan int, goroutinesCount)
+    syslogSubstrIndexCh := make(chan int, goroutinesCount)
 
     for i := 0; i < goroutinesCount; i++ {
         go func() {
-            sysLogEntry := testdata.Syslog[rand.Intn(len(testdata.Syslog))]
+            index := <-syslogIndexCh
+            sysLogEntry := testdata.Syslog[index]
             fmt.Println(sysLogEntry)
         }()
     }
 
-    wg := &sync.WaitGroup{}
-    wg.Add(goroutinesCount)
-
     for i := 0; i < goroutinesCount; i++ {
         go func() {
-            keyword := testdata.SyslogSubstrs[rand.Intn(len(testdata.SyslogSubstrs))]
-            found := logsWatcher.WaitFor(keyword, time.Duration(goroutinesCount+1)*time.Millisecond)
+            index := <-syslogSubstrIndexCh
+            keyword := testdata.SyslogSubstrs[index]
+            found := logsWatcher.WaitFor(keyword, 1*time.Second)
             assert.True(t, found, "keyword not found: ", keyword)
             wg.Done()
+        }()
+    }
+
+    for i := 0; i < goroutinesCount; i++ {
+        randomIndex := rand.Intn(len(testdata.SyslogSubstrs))
+        go func() {
+            syslogIndexCh <- randomIndex
+        }()
+        go func() {
+            syslogSubstrIndexCh <- randomIndex
         }()
     }
 

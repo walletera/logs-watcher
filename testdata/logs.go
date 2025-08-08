@@ -36,7 +36,12 @@ var Syslog = []string{
 }
 
 var SyslogSubstrs = []string{
+    "[30755.510587] mce: CPU1: Package temperature/speed normal",
+    "mce: CPU2: Package temperature",
     "CPU5: Package temperature/speed normal",
+    "wpa_supplicant[1494]: wlp60s0: CTRL-EVENT-BEACON-LOSS",
+    "Window manager warning: Window 0x300e9d6 sets an MWM",
+    "Window manager warning: but sets min size 1 x 1",
     "Window manager warning: this doesn't make much sense",
     "Power Button: device is a keyboard",
 }

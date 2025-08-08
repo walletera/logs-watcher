@@ -9,8 +9,8 @@ import (
     "github.com/walletera/logs-watcher/newline"
 )
 
-// StdWatcher watches logs from Stdout and Stderr
-type StdWatcher struct {
+// Watcher watches logs from Stdout and Stderr
+type Watcher struct {
     *newline.Watcher
 
     realStdout *os.File
@@ -20,8 +20,8 @@ type StdWatcher struct {
     stopping   bool
 }
 
-func NewStdWatcher() (*StdWatcher, error) {
-    stdoutWatcher := &StdWatcher{}
+func NewWatcher() (*Watcher, error) {
+    stdoutWatcher := &Watcher{}
 
     stdoutWatcher.realStdout = os.Stdout
     stdoutWatcher.realStderr = os.Stderr
@@ -44,11 +44,14 @@ func NewStdWatcher() (*StdWatcher, error) {
     return stdoutWatcher, nil
 }
 
-func (w *StdWatcher) startScanner(r io.Reader) {
+func (w *Watcher) startScanner(r io.Reader) {
     scanner := bufio.NewScanner(r)
     for scanner.Scan() {
         line := scanner.Text()
-        fmt.Fprintln(w.realStdout, line)
+        _, err := fmt.Fprintln(w.realStdout, line)
+        if err != nil {
+            panic("failed writing log line to stdout: " + err.Error())
+        }
         w.Watcher.AddLogLine(line)
     }
     if err := scanner.Err(); err != nil {
@@ -60,15 +63,18 @@ func (w *StdWatcher) startScanner(r io.Reader) {
     }
 }
 
-func (w *StdWatcher) Stop() error {
-    w.Watcher.Stop()
+func (w *Watcher) Stop() error {
+    err := w.Watcher.Stop()
+    if err != nil {
+        return err
+    }
 
     w.stopping = true
 
     os.Stdout = w.realStdout
     os.Stderr = w.realStderr
 
-    err := w.pipeRead.Close()
+    err = w.pipeRead.Close()
     if err != nil {
         return fmt.Errorf("error stop logs watcher: %w", err)
     }

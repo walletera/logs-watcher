@@ -33,6 +33,27 @@ func TestSlogWatcher_WaitFor_LogIsAlreadyThere(t *testing.T) {
     require.NoError(t, err)
 }
 
+func TestSlogWatcher_WaitForNTimes(t *testing.T) {
+    handler, err := newZapHandler()
+    require.NoError(t, err)
+
+    logsWatcher := NewWatcher(handler)
+    logger := slog.New(logsWatcher.decoratedHandler)
+
+    time.Sleep(1 * time.Millisecond)
+
+    logger.Info("Hola Mundo Loco!")
+    logger.Info("Hola Mundo Loco!")
+    logger.Info("Hola Mundo Loco!")
+
+    found := logsWatcher.WaitForNTimes("Mundo", 100*time.Millisecond, 3)
+
+    assert.True(t, found)
+
+    err = logsWatcher.Stop()
+    require.NoError(t, err)
+}
+
 func TestSlogWatcher_WaitFor_LogAppearsAfterTheCallToWaitFor(t *testing.T) {
     handler, err := newZapHandler()
     require.NoError(t, err)
