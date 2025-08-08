@@ -1,4 +1,5 @@
 # Logs Watcher
+[![Go](https://github.com/walletera/logs-watcher/actions/workflows/go.yml/badge.svg)](https://github.com/walletera/logs-watcher/actions/workflows/go.yml)
 
 **logs-watcher** is a Go library designed to help developers test and assert that their application produces the expected logs. This is particularly useful in integration tests, where it's important to verify that certain actions generate the correct log output, either through `os.Stdout`/`os.Stderr` or through structured loggers like `slog`.
 
@@ -13,7 +14,7 @@
 
 ## Installation
 ```
-shell go get github.com/walletera/logs-watcher
+go get github.com/walletera/logs-watcher
 ``` 
 
 ## Usage
