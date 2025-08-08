@@ -3,14 +3,12 @@ package newline
 import (
     "context"
     "strings"
-    "sync"
     "sync/atomic"
     "time"
 )
 
 type Watcher struct {
     lines                           []string
-    linesMutex                      sync.RWMutex
     newLinesCh                      chan string
     newLinesChSize                  int
     newLinesSubscriptionIdGenerator atomic.Int64
